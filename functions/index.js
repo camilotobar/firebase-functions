@@ -2,6 +2,7 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 admin.initializeApp();
 
+// Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/loginUser - Params passed by body
 exports.loginUser = functions.https.onRequest(async (req, res) => {
     const email = req.body.email;
     const password = req.body.password;
@@ -15,13 +16,14 @@ exports.loginUser = functions.https.onRequest(async (req, res) => {
     res.sendStatus((authenticated) ? 200 : 401);
 });
 
+// Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/registerUser - Params passed by body
 exports.registerUser = functions.https.onRequest(async (req, res) => {
     const email = req.body.email;
     const password = req.body.password;
-    const monitor = req.query.monitor;
-    const student = req.query.student;
-    const name = req.query.name;
-    const program = req.query.program;
+    const monitor = req.body.monitor;
+    const student = req.body.student;
+    const name = req.body.name;
+    const program = req.body.program;
 
     let created = false;
 
@@ -46,6 +48,7 @@ exports.registerUser = functions.https.onRequest(async (req, res) => {
     res.sendStatus((created)? 200 : 503);
 });
 
+// Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/addMeeting?monitor_email=EMAIL&location=LOCATION&start_time=START&end_time=END
 exports.addMeeting = functions.https.onRequest(async (req, res) => {
     const monitor_email = req.query.monitor_email;
     const location = req.query.location;
@@ -87,6 +90,7 @@ exports.addMeeting = functions.https.onRequest(async (req, res) => {
     res.sendStatus((added)? 200 : 503);
 });
 
+// Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/enrollMeeting?student_email=EMAIL&meetingId=MEETING
 exports.enrollMeeting = functions.https.onRequest(async (req, res) => {
     const student_email = req.query.student_email;
     const meetingId = req.query.meetingId;
@@ -108,6 +112,7 @@ exports.enrollMeeting = functions.https.onRequest(async (req, res) => {
     res.sendStatus((enrolled)? 200 : 503);
 });
 
+// Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/getSubjects?program=PROGRAM
 exports.getSubjects = functions.https.onRequest(async (req, res) => {
     const program = req.query.program;
     let subjects = [];
@@ -122,6 +127,7 @@ exports.getSubjects = functions.https.onRequest(async (req, res) => {
     res.send(subjects);
 });
 
+// Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/getMeetingsBySubject?subject=SUBJECT
 exports.getMeetingsBySubject = functions.https.onRequest(async (req, res) => {
     const subject = req.query.subject;
     let meetings = [];
@@ -135,21 +141,3 @@ exports.getMeetingsBySubject = functions.https.onRequest(async (req, res) => {
 
     res.send(meetings);
 });
-
-exports.helloWorld = functions.https.onRequest((request, response) => {
-    let mes = 'Message: ';
-    admin.database().ref('/messages').on('value', (snapshot) => {
-        console.log(snapshot.val());
-        snapshot.forEach((childNodes) => {
-            console.log(`${childNodes.key} - ${childNodes.val().original}`);
-            mes = `${mes} ${childNodes.val().key} - ${childNodes.val().original} | `;
-        });
-    });
-    response.send(`Hello from Firebase!`);
-});
-
-
-// // Create and Deploy Your First Cloud Functions
-// // https://firebase.google.com/docs/functions/write-firebase-functions
-//
-
