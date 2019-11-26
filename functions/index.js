@@ -54,9 +54,6 @@ exports.registerUser = functions.https.onRequest(async (req, res) => {
     const student = req.body.student;
     const name = req.body.name;
     const program = req.body.program;
-
-    console.log(`Email: ${email}, Password: ${password} and Name: ${name}`);
-
     let created = false;
 
     await admin.auth().createUser({email: email, password: password})
