@@ -44,9 +44,9 @@ exports.registerUser = functions.https.onRequest(async (req, res) => {
 
     let created = false;
 
-    await admin.auth().createUser({ email: email, password: password })
+    await admin.auth().createUser({email: email, password: password})
     // eslint-disable-next-line promise/always-return
-        .then((response)=> {
+        .then((response) => {
             admin.firestore().collection('users').add(
                 {
                     email: email,
@@ -54,6 +54,8 @@ exports.registerUser = functions.https.onRequest(async (req, res) => {
                     student: student,
                     name: name,
                     program: program,
+                    student_meetings: [],
+                    monitor_meetings: []
                 }
             );
             created = true;
@@ -62,7 +64,7 @@ exports.registerUser = functions.https.onRequest(async (req, res) => {
             console.log(error.message);
         });
 
-    res.sendStatus((created)? 200 : 503);
+    res.sendStatus((created) ? 200 : 503);
 });
 
 // GET Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/addMeeting?monitor_email=EMAIL&location=LOCATION&start_time=START&end_time=END
@@ -94,17 +96,16 @@ exports.addMeeting = functions.https.onRequest(async (req, res) => {
     await admin.firestore().collection('users').where('email', '==', monitor_email).get().then((querySnapshot) => {
         querySnapshot.forEach((monitor) => {
             let monitor_meetings = [];
+            if (monitor.data().monitor_meetings !== null)
+                monitor_meetings = monitor.data().monitor_meetings;
             monitor_meetings.push(meetingId);
 
-            if(monitor.data().monitor_meetings !== null)
-                monitor_meetings = monitor.data().monitor_meetings;
-
-            admin.firestore().collection('users').doc(monitor.id).update({ monitor_meetings : monitor_meetings });
+            admin.firestore().collection('users').doc(monitor.id).update({monitor_meetings: monitor_meetings});
             added = true;
         })
     });
 
-    res.sendStatus((added)? 200 : 503);
+    res.sendStatus((added) ? 200 : 503);
 });
 
 // GET Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/enrollMeeting?student_email=EMAIL&meetingId=MEETING
@@ -117,16 +118,15 @@ exports.enrollMeeting = functions.https.onRequest(async (req, res) => {
     await admin.firestore().collection('users').where('email', '==', student_email).get().then((querySnapshot) => {
         querySnapshot.forEach((student) => {
             let student_meetings = [];
+            if (student.data().student_meetings !== null)
+                student_meetings = student.data().student_meetings;
             student_meetings.push(meetingId);
 
-            if(student.data().student_meetings !== null)
-                student_meetings = student.data().student_meetings;
-
-            admin.firestore().collection('users').doc(student.id).update({ student_meetings : student_meetings });
+            admin.firestore().collection('users').doc(student.id).update({student_meetings: student_meetings});
             enrolled = true;
         });
     });
-    res.sendStatus((enrolled)? 200 : 503);
+    res.sendStatus((enrolled) ? 200 : 503);
 });
 
 // GET Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/getUser
@@ -171,33 +171,43 @@ exports.getSubjects = functions.https.onRequest(async (req, res) => {
 });
 
 // GET Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/getMeetingsBooked?email=EMAIL
-exports.getMeetingsBooked = functions.https.onRequest(async (req, res) =>{
+exports.getMeetingsBooked = functions.https.onRequest(async (req, res) => {
     const email = req.query.email;
-    let meetings = { asStudent: [], asMonitor: [] };
-    let monitorSubjects = [];
-    let studentSubjects = [];
+    let meetings = {asStudent: [], asMonitor: []};
+    let monitorMeetings = [];
+    let studentMeetings = [];
+    let mnMeetings = [];
+    let stMeetings = [];
 
     // eslint-disable-next-line promise/always-return
     await admin.firestore().collection('users').where('email', '==', email).get().then((querySnapshot) => {
         querySnapshot.forEach((item) => {
-            monitorSubjects = item.data().monitor_meetings;
-            studentSubjects = item.data().student_meetings;
+            monitorMeetings = item.data().monitor_meetings;
+            studentMeetings = item.data().student_meetings;
         });
     });
 
-    monitorSubjects.forEach((meeting) => {
-        // eslint-disable-next-line promise/catch-or-return,promise/always-return
-        admin.firestore().collection('meetings').doc(meeting).get().then((document) => {
-            meetings.asMonitor.push(document.data());
-        });
-    });
+    if (monitorMeetings !== null)
+        for (const meeting of monitorMeetings) {
+            // eslint-disable-next-line promise/catch-or-return,promise/always-return,no-await-in-loop
+            await admin.firestore().collection('meetings').doc(meeting).get().then((document) => {
+                // eslint-disable-next-line promise/always-return
+                if (document.exists)
+                    meetings.asMonitor.push(document.data());
+            });
+        }
 
-    studentSubjects.forEach((meeting) => {
-        // eslint-disable-next-line promise/catch-or-return,promise/always-return
-        admin.firestore().collection('meetings').doc(meeting).get().then((document) => {
-            meetings.asStudent.push(document.data());
-        });
-    });
+    if (studentMeetings !== null)
+         for (const meeting of studentMeetings) {
+             // eslint-disable-next-line promise/catch-or-return,promise/always-return,no-await-in-loop
+             await admin.firestore().collection('meetings').doc(`${meeting}`).get().then((document) => {
+                // eslint-disable-next-line promise/always-return
+                if (document.exists) {
+                    meetings.asStudent.push(document.data());
+                }
+            });
+        }
+
     res.send(meetings);
 });
 
