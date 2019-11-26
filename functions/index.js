@@ -1,7 +1,7 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const firebase = require('firebase');
-admin.initializeApp();
+const cors = require('cors')({origin: true});
 
 var firebaseConfig = {
     apiKey: "AIzaSyCtcyIAL81Ovwqw5n60FALg5E-NYxiPXt4",
@@ -14,9 +14,15 @@ var firebaseConfig = {
 };
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
+admin.initializeApp();
 
-// POST Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/loginUser - Params passed by body
+// POST METHOD (https://us-central1-proyecto-web-km.cloudfunctions.net/loginUser)- Params passed by body
+// It allows to log a user via firebase authentication service.
+// Params:
+//      Email - String,
+//      Password - String
 exports.loginUser = functions.https.onRequest(async (req, res) => {
+    cors(req, res, () => {});
     const email = req.body.email;
     const password = req.body.password;
     let authenticated = false;
@@ -31,8 +37,17 @@ exports.loginUser = functions.https.onRequest(async (req, res) => {
     res.sendStatus((authenticated) ? 200 : 401);
 });
 
-// POST Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/registerUser - Params passed by body
+// POST METHOD: (https://us-central1-proyecto-web-km.cloudfunctions.net/registerUser) - Params passed by body
+// It allows to register a user via firebase authentication service.
+// Params:
+//      Email - String,
+//      Password - String,
+//      ifMonitor - Bool,
+//      ifStudent - Bool,
+//      Name - String,
+//      Program - String
 exports.registerUser = functions.https.onRequest(async (req, res) => {
+    cors(req, res, () => {});
     const email = req.body.email;
     const password = req.body.password;
     const monitor = req.body.monitor;
@@ -67,8 +82,15 @@ exports.registerUser = functions.https.onRequest(async (req, res) => {
     res.sendStatus((created) ? 200 : 503);
 });
 
-// GET Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/addMeeting?monitor_email=EMAIL&location=LOCATION&start_time=START&end_time=END
+// GET METHOD: (https://us-central1-proyecto-web-km.cloudfunctions.net/addMeeting)
+// It allows to add a meeting by the monitor.
+// Params:
+//      Monitor_Email - String,
+//      Location - String,
+//      Start_Time - timestamp,
+//      End_Time - timestamp,
 exports.addMeeting = functions.https.onRequest(async (req, res) => {
+    cors(req, res, () => {});
     const monitor_email = req.query.monitor_email;
     const location = req.query.location;
     const start_time = req.query.start_time;
@@ -108,8 +130,13 @@ exports.addMeeting = functions.https.onRequest(async (req, res) => {
     res.sendStatus((added) ? 200 : 503);
 });
 
-// GET Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/enrollMeeting?student_email=EMAIL&meetingId=MEETING
+// GET METHOD: (https://us-central1-proyecto-web-km.cloudfunctions.net/enrollMeeting)
+// It allows to enroll a meeting by the student.
+// Params:
+//      Student_Email - String,
+//      MeetingId - String,
 exports.enrollMeeting = functions.https.onRequest(async (req, res) => {
+    cors(req, res, () => {});
     const student_email = req.query.student_email;
     const meetingId = req.query.meetingId;
     let enrolled = false;
@@ -129,8 +156,13 @@ exports.enrollMeeting = functions.https.onRequest(async (req, res) => {
     res.sendStatus((enrolled) ? 200 : 503);
 });
 
-// GET Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/getUser
+// GET METHOD: (https://us-central1-proyecto-web-km.cloudfunctions.net/getUser)
+// It gets a user by the email.
+// Params:
+//      email - String
+// Return: User found
 exports.getUser = functions.https.onRequest(async (req, res) => {
+    cors(req, res, () => {});
     const email = req.query.email;
     let user = null;
     // eslint-disable-next-line promise/always-return
@@ -142,8 +174,11 @@ exports.getUser = functions.https.onRequest(async (req, res) => {
     res.send(user);
 });
 
-// GET Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/getPrograms
+// GET METHOD: (https://us-central1-proyecto-web-km.cloudfunctions.net/getPrograms)
+// It gets the current supported programs.
+// Return: List of programs found
 exports.getPrograms = functions.https.onRequest(async (req, res) => {
+    cors(req, res, () => {});
     let programs = [];
 
     // eslint-disable-next-line promise/always-return
@@ -155,8 +190,13 @@ exports.getPrograms = functions.https.onRequest(async (req, res) => {
     res.send(programs);
 });
 
-// GET Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/getSubjects?program=PROGRAM
+// GET METHOD: (https://us-central1-proyecto-web-km.cloudfunctions.net/getSubjects)
+// It gets the subjects of an specific program.
+// Params:
+//      program - String
+// Return: List of subjects found
 exports.getSubjects = functions.https.onRequest(async (req, res) => {
+    cors(req, res, () => {});
     const program = req.query.program;
     let subjects = [];
 
@@ -170,14 +210,17 @@ exports.getSubjects = functions.https.onRequest(async (req, res) => {
     res.send(subjects);
 });
 
-// GET Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/getMeetingsBooked?email=EMAIL
+// GET METHOD: (https://us-central1-proyecto-web-km.cloudfunctions.net/getMeetingsBooked)
+// It gets the meetings booked by the user email.
+// Params:
+//      email - String
+// Return: List of meetings found
 exports.getMeetingsBooked = functions.https.onRequest(async (req, res) => {
+    cors(req, res, () => {});
     const email = req.query.email;
     let meetings = {asStudent: [], asMonitor: []};
     let monitorMeetings = [];
     let studentMeetings = [];
-    let mnMeetings = [];
-    let stMeetings = [];
 
     // eslint-disable-next-line promise/always-return
     await admin.firestore().collection('users').where('email', '==', email).get().then((querySnapshot) => {
@@ -200,7 +243,7 @@ exports.getMeetingsBooked = functions.https.onRequest(async (req, res) => {
     if (studentMeetings !== null)
          for (const meeting of studentMeetings) {
              // eslint-disable-next-line promise/catch-or-return,promise/always-return,no-await-in-loop
-             await admin.firestore().collection('meetings').doc(`${meeting}`).get().then((document) => {
+             await admin.firestore().collection('meetings').doc(meeting).get().then((document) => {
                 // eslint-disable-next-line promise/always-return
                 if (document.exists) {
                     meetings.asStudent.push(document.data());
@@ -211,8 +254,13 @@ exports.getMeetingsBooked = functions.https.onRequest(async (req, res) => {
     res.send(meetings);
 });
 
-// GET Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/getMeetingsBySubject?subject=SUBJECT
+// GET METHOD: (https://us-central1-proyecto-web-km.cloudfunctions.net/getMeetingsBySubject)
+// It gets the meetings available according to the subject.
+// Params:
+//      subject - String
+// Return: List of meetings found
 exports.getMeetingsBySubject = functions.https.onRequest(async (req, res) => {
+    cors(req, res, () => {});
     const subject = req.query.subject;
     let meetings = [];
 
