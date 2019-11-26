@@ -112,6 +112,19 @@ exports.enrollMeeting = functions.https.onRequest(async (req, res) => {
     res.sendStatus((enrolled)? 200 : 503);
 });
 
+// Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/getPrograms
+exports.getPrograms = functions.https.onRequest(async (req, res) => {
+    let programs = [];
+
+    // eslint-disable-next-line promise/always-return
+    await admin.firestore().collection('programs').get().then((querySnapshot) => {
+        querySnapshot.forEach((item) => {
+            programs.push(item.data().name);
+        });
+    });
+    res.send(programs);
+});
+
 // Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/getSubjects?program=PROGRAM
 exports.getSubjects = functions.https.onRequest(async (req, res) => {
     const program = req.query.program;
@@ -125,6 +138,37 @@ exports.getSubjects = functions.https.onRequest(async (req, res) => {
     });
 
     res.send(subjects);
+});
+
+// Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/getMeetingsBooked?email=EMAIL
+exports.getMeetingsBooked = functions.https.onRequest(async (req, res) =>{
+    const email = req.query.email;
+    let meetings = { asStudent: [], asMonitor: [] };
+    let monitorSubjects = [];
+    let studentSubjects = [];
+
+    // eslint-disable-next-line promise/always-return
+    await admin.firestore().collection('users').where('email', '==', email).get().then((querySnapshot) => {
+        querySnapshot.forEach((item) => {
+            monitorSubjects = item.data().monitor_meetings;
+            studentSubjects = item.data().student_meetings;
+        });
+    });
+
+    monitorSubjects.forEach((meeting) => {
+        // eslint-disable-next-line promise/catch-or-return,promise/always-return
+        admin.firestore().collection('meetings').doc(meeting).get().then((document) => {
+            meetings.asMonitor.push(document.data());
+        });
+    });
+
+    studentSubjects.forEach((meeting) => {
+        // eslint-disable-next-line promise/catch-or-return,promise/always-return
+        admin.firestore().collection('meetings').doc(meeting).get().then((document) => {
+            meetings.asStudent.push(document.data());
+        });
+    });
+    res.send(meetings);
 });
 
 // Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/getMeetingsBySubject?subject=SUBJECT
