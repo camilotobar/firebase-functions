@@ -1,6 +1,19 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const firebase = require('firebase');
 admin.initializeApp();
+
+var firebaseConfig = {
+    apiKey: "AIzaSyCtcyIAL81Ovwqw5n60FALg5E-NYxiPXt4",
+    authDomain: "proyecto-web-km.firebaseapp.com",
+    databaseURL: "https://proyecto-web-km.firebaseio.com",
+    projectId: "proyecto-web-km",
+    storageBucket: "proyecto-web-km.appspot.com",
+    messagingSenderId: "467185900660",
+    appId: "1:467185900660:web:7f61c51ba9e37a75070521"
+};
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
 
 // POST Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/loginUser - Params passed by body
 exports.loginUser = functions.https.onRequest(async (req, res) => {
@@ -8,9 +21,11 @@ exports.loginUser = functions.https.onRequest(async (req, res) => {
     const password = req.body.password;
     let authenticated = false;
 
-    // eslint-disable-next-line promise/always-return
-    await admin.auth().getUserByEmail(email).then((response) => {
+    // eslint-disable-next-line promise/always-return,promise/catch-or-return
+    await firebase.auth().signInWithEmailAndPassword(email, password).then((response) => {
         authenticated = true;
+    }).catch((error) => {
+        console.log(error.message);
     });
 
     res.sendStatus((authenticated) ? 200 : 401);
