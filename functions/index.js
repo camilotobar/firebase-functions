@@ -129,7 +129,20 @@ exports.enrollMeeting = functions.https.onRequest(async (req, res) => {
     res.sendStatus((enrolled)? 200 : 503);
 });
 
-// Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/getPrograms
+// GET Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/getUser
+exports.getUser = functions.https.onRequest(async (req, res) => {
+    const email = req.query.email;
+    let user = null;
+    // eslint-disable-next-line promise/always-return
+    await admin.firestore().collection('users').where('email', '==', email).get().then((querySnapshot) => {
+        querySnapshot.forEach((item) => {
+            user = item.data();
+        });
+    });
+    res.send(user);
+});
+
+// GET Ex: https://us-central1-proyecto-web-km.cloudfunctions.net/getPrograms
 exports.getPrograms = functions.https.onRequest(async (req, res) => {
     let programs = [];
 
